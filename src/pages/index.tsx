@@ -6,7 +6,7 @@ const Home = () => {
       <div className="text-3xl font-bold text-blue-500">Heloo!!!!!</div>
       <p>animalanimal</p>
       <div>aaa</div>
-      <Button />
+      <Button name={"ボタン"} />
     </>
   )
 }
