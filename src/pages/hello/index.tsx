@@ -1,6 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
-import { Button } from "@/components/Button"
+import { Button, RedButton } from "@/components/Button"
 import { Input } from "@material-tailwind/react"
 import { useEffect, useState } from "react";
 import { Checkbox } from "@material-tailwind/react";
@@ -35,10 +35,10 @@ const Hello = () => {
 
   return (
     <div className="h-screen bg-blue-50">
-      <div className="text-2xl mb-2 text-center">Todo List</div>
+      <div className="text-2xl pt-2 mb-2 text-center">Todo List</div>
       <div className="flex justify-center">
-        <div className="w-96 mr-5 bg-white">
-          <Input label="Add New Task" onChange={(e) =>     //入力した最新の文字列をtypingへ入れる
+        <div className="w-96 mr-5 bg-white rounded-md">
+          <Input color="green" label="Add New Task" onChange={(e) =>     //入力した最新の文字列をtypingへ入れる
             setTyping(e.target.value)} />
         </div>
 
@@ -54,24 +54,30 @@ const Hello = () => {
           <Button name={"追加"} />
         </div>
       </div>
-
-      {
-        todoList.map((value) => {
-          return (
-            <div key={value.id}
-              onClick={() => {
-                console.log(value.id);
-                checkTodo(value.id)
-              }}
-              className={value.isChecked ? "text-blue-500" : "text-red-500"}
-            >{value.text}</div>
-          )
-        })
-      }
-
-    </div>
+      <div className="w-1/3 mx-auto mt-8 bg-white rounded-md divide-y divide-gray-400 divide-dashed">
+        {
+          todoList.map((value) => {
+            return (
+              <div key={value.id} className="flex items-center">
+                <div onClick={() => {
+                  checkTodo(value.id)
+                }}
+                >
+                  <Checkbox color="green" defaultChecked={value.isChecked} className="text-left" />
+                </div>
+                <div className={value.isChecked ? "text-gray-500 line-through" : "text-black-500"}>{value.text}</div>
+                {value.isChecked &&
+                  <div className="ml-auto mr-3">
+                    <RedButton name={"削除"} />
+                  </div>
+                }
+              </div >
+            )
+          })
+        }
+      </div>
+    </div >
   )
-
 }
 
 export default Hello
