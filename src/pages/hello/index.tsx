@@ -29,6 +29,16 @@ const Hello = () => {
     setTodoList(newTodos);
   };
 
+  // 特定のidをtodolistから削除する関数
+  const deleteTodoList = (id: number) => {
+    const newTodoList = Object.assign([], todoList)
+    const todoFind = (todo: Todo) => {
+      return todo.id !== id
+    }
+    const result = newTodoList.filter(todoFind)
+    setTodoList(result)
+  }
+
   useEffect(() => {
     console.log(todoList);
   }, [todoList])
@@ -65,9 +75,13 @@ const Hello = () => {
                 >
                   <Checkbox color="green" defaultChecked={value.isChecked} className="text-left" />
                 </div>
-                <div className={value.isChecked ? "text-gray-500 line-through" : "text-black-500"}>{value.text}</div>
+                <div className={value.isChecked ? "text-gray-500 line-through" : "text-black-500"}>
+                  {value.text}</div>
                 {value.isChecked &&
-                  <div className="ml-auto mr-3">
+                  <div onClick={() => {
+                    deleteTodoList(value.id)
+                  }}
+                    className="ml-auto mr-3" >
                     <RedButton name={"削除"} />
                   </div>
                 }
