@@ -39,6 +39,7 @@ const Hello = () => {
     setTodoList(result)
   }
 
+
   useEffect(() => {
     console.log(todoList);
   }, [todoList])
@@ -48,22 +49,27 @@ const Hello = () => {
       <div className="text-2xl pt-2 mb-2 text-center">Todo List</div>
       <div className="flex justify-center">
         <div className="w-96 mr-5 bg-white rounded-md">
-          <Input color="green" label="Add New Task" onChange={(e) =>     //入力した最新の文字列をtypingへ入れる
-            setTyping(e.target.value)} />
+          <Input color="green" label="Add New Task"
+            onChange={(e) =>     //入力した最新の文字列をtypingへ入れる
+              setTyping(e.target.value)} />
         </div>
 
         <div onClick={() => {
           const newTodoList = Object.assign([], todoList) //stateの配列データ(todoList)を、純粋な配列データ(newTodoList)にする
-          newTodoList.push({                     //pushで、newTodoListの配列データに各オブジェクトを追加する（オブジェクトの型はTodoで指定）
-            id: newTodoList.length,
-            text: typing,
-            isChecked: false
-          })
-          setTodoList(newTodoList)
+          {
+            typing === ("") ? alert("タスクを入力してください！") :
+              newTodoList.push({                     //pushで、newTodoListの配列データに各オブジェクトを追加する（オブジェクトの型はTodoで指定）
+                id: newTodoList.length,
+                text: typing,
+                isChecked: false
+              })
+            setTodoList(newTodoList)
+          }
         }} >
           <Button name={"追加"} />
         </div>
       </div>
+      {/* //白いエリアを作成して、それを中央寄せしてレイアウトを整える*/}
       <div className="w-1/3 mx-auto mt-8 bg-white rounded-md divide-y divide-gray-400 divide-dashed">
         {
           todoList.map((value) => {
@@ -77,6 +83,7 @@ const Hello = () => {
                 </div>
                 <div className={value.isChecked ? "text-gray-500 line-through" : "text-black-500"}>
                   {value.text}</div>
+                {/* チェックされているものだけ削除ボタンを表示する */}
                 {value.isChecked &&
                   <div onClick={() => {
                     deleteTodoList(value.id)
