@@ -15,7 +15,7 @@ type Todo = {
 };
 
 type TodoResponse = {
-  ID: number;
+  id: number;
   text: string;
 };
 
@@ -44,7 +44,7 @@ const Hello = () => {
     axios.get(baseURL + "/todos").then((response) => {
       const getList: Todo[] = response.data.map((item: TodoResponse) => {
         return {
-          id: item.ID,
+          id: item.id,
           text: item.text,
           isChecked: false,
         };
@@ -89,9 +89,17 @@ const Hello = () => {
           <Input
             color="green"
             label="Add New Task"
+            value={typing}
             onChange={(
               e //入力した最新の文字列をtypingへ入れる
             ) => setTyping(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.shiftKey) {
+                postTodoList(typing);
+                setTyping("");
+              }
+              return;
+            }}
           />
         </div>
 
@@ -99,6 +107,7 @@ const Hello = () => {
         <div
           onClick={() => {
             postTodoList(typing);
+            setTyping("");
           }}
         >
           <Button name={"追加"} />
