@@ -2,7 +2,7 @@
 
 import { Button, RedButton } from "@/components/Button";
 import { Input } from "@material-tailwind/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Checkbox } from "@material-tailwind/react";
 // サーバーとのやり取りをするためのライブラリ
 import axios from "axios";
@@ -62,16 +62,42 @@ const Hello = () => {
   };
 
   // 特定のidをtodolistから削除する関数
-  const deleteTodoList = (id: number) => {
+  const deleteTodoList = useCallback((id: number) => {
     axios.delete(baseURL + "/todo/" + id).then(() => {
       getTodoList();
     });
-  };
+  }, []);
+  // checkされているものだけを削除する関数 useEffectで実行すると無限ループになるので、useCallbackで囲う
+
+  const deleteCheckedTodo = useCallback(() => {
+    // todoListをループさせて、新しい配列newTodosを作成する
+    const newTodos = todoList.filter((todo) => {
+      if (todo.isChecked) {
+        deleteTodoList(todo.id);
+      }
+      return !todo.isChecked;
+    });
+    // newTodosをstateに入れる
+    setTodoList(newTodos);
+  }, [todoList, deleteTodoList]);
 
   // データベースに入っている配列をAPIで持ってきて、リストを初期表示させるための処理
   useEffect(() => {
     getTodoList();
   }, []);
+
+  // shift+EnterでdeleteCheckedTodoを実行する
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && e.shiftKey) {
+        deleteCheckedTodo();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [deleteCheckedTodo, todoList]);
 
   // コンソールログで配列の中身確認する用
   useEffect(() => {
