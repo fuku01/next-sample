@@ -1,41 +1,31 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
-import { Button, RedButton } from "@/components/Button"
-import { Input } from "@material-tailwind/react"
-import { useEffect, useState } from "react";
+import { Button, RedButton } from "@/components/Button";
+import { Input } from "@material-tailwind/react";
+import { useCallback, useEffect, useState } from "react";
 import { Checkbox } from "@material-tailwind/react";
 // サーバーとのやり取りをするためのライブラリ
 import axios from "axios";
 
 // 事前に型を定義しておく
 type Todo = {
-  id: number
-  text: string
-  isChecked: boolean
-}
+  id: number;
+  text: string;
+  isChecked: boolean;
+};
 
+type TodoResponse = {
+  id: number;
+  text: string;
+};
 
 const Hello = () => {
-
   // さこが作ったAPI
-  const baseURL = "http://localhost:5003/todos";
-
-  // データベースに入っている配列をAPIで持ってきて、リストを初期表示させるための処理
-  useEffect(() => {
-    axios.get(baseURL).then((response) => {
-      const getList = response.data.map((item: { text: string }, index: number) => ({
-        id: index,
-        text: item.text,
-        isChecked: false
-      }));
-      setTodoList(getList);
-    });
-  }, []);
+  const baseURL = "http://localhost:5003";
 
   // useState(変数的なやつ)
-  const [typing, setTyping] = useState<string>("")
-  const [todoList, setTodoList] = useState<Todo[]>([])
-
+  const [typing, setTyping] = useState<string>("");
+  const [todoList, setTodoList] = useState<Todo[]>([]);
 
   // id を指定するとCheckされる関数
   const checkTodo = (id: number) => {
@@ -49,21 +39,70 @@ const Hello = () => {
     // newTodosをstateに入れる
     setTodoList(newTodos);
   };
+  // データベースに入っている配列をAPIで持ってきて、リストを初期表示させるための処理
+  const getTodoList = () => {
+    axios.get(baseURL + "/todos").then((response) => {
+      const getList: Todo[] = response.data.map((item: TodoResponse) => {
+        return {
+          id: item.id,
+          text: item.text,
+          isChecked: false,
+        };
+      });
+
+      setTodoList(getList);
+    });
+  };
 
   // 特定のidをtodolistから削除する関数
-  const deleteTodoList = (id: number) => {
-    const newTodoList = Object.assign([], todoList)
-    const todoFind = (todo: Todo) => {
-      return todo.id !== id
-    }
-    const result = newTodoList.filter(todoFind)
-    setTodoList(result)
-  }
+  const postTodoList = (text: string) => {
+    axios.post(baseURL + "/todo", { text: text }).then(() => {
+      getTodoList();
+    });
+  };
+
+  // 特定のidをtodolistから削除する関数
+  const deleteTodoList = useCallback((id: number) => {
+    axios.delete(baseURL + "/todo/" + id).then(() => {
+      getTodoList();
+    });
+  }, []);
+  // checkされているものだけを削除する関数 useEffectで実行すると無限ループになるので、useCallbackで囲う
+
+  const deleteCheckedTodo = useCallback(() => {
+    // todoListをループさせて、新しい配列newTodosを作成する
+    const newTodos = todoList.filter((todo) => {
+      if (todo.isChecked) {
+        deleteTodoList(todo.id);
+      }
+      return !todo.isChecked;
+    });
+    // newTodosをstateに入れる
+    setTodoList(newTodos);
+  }, [todoList, deleteTodoList]);
+
+  // データベースに入っている配列をAPIで持ってきて、リストを初期表示させるための処理
+  useEffect(() => {
+    getTodoList();
+  }, []);
+
+  // shift+EnterでdeleteCheckedTodoを実行する
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && e.shiftKey) {
+        deleteCheckedTodo();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [deleteCheckedTodo, todoList]);
 
   // コンソールログで配列の中身確認する用
   useEffect(() => {
     console.log(todoList);
-  }, [todoList])
+  }, [todoList]);
 
   return (
     // タイトル表示
@@ -73,65 +112,83 @@ const Hello = () => {
       {/* 入力フォーム */}
       <div className="flex justify-center">
         <div className="w-96 mr-5 bg-white rounded-md">
-          <Input color="green" label="Add New Task"
-            onChange={(e) =>     //入力した最新の文字列をtypingへ入れる
-              setTyping(e.target.value)} />
+          <Input
+            color="green"
+            label="Add New Task"
+            value={typing}
+            onChange={(
+              e //入力した最新の文字列をtypingへ入れる
+            ) => setTyping(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.shiftKey) {
+                postTodoList(typing);
+                setTyping("");
+              }
+              return;
+            }}
+          />
         </div>
 
         {/* 追加ボタン */}
-        <div onClick={() => {
-          const newTodoList = Object.assign([], todoList) //stateの配列データ(todoList)を、純粋な配列データ(newTodoList)にする
-          {
-            typing === ("") ? alert("タスクを入力してください！") :
-              newTodoList.push({                     //pushで、newTodoListの配列データに各オブジェクトを追加する（オブジェクトの型はTodoで指定）
-                id: newTodoList.length,
-                text: typing,
-                isChecked: false
-              })
-            setTodoList(newTodoList)
-          }
-        }} >
+        <div
+          onClick={() => {
+            postTodoList(typing);
+            setTyping("");
+          }}
+        >
           <Button name={"追加"} />
         </div>
       </div>
 
       {/* //白いエリアを作成して、それを中央寄せしてレイアウトを整える*/}
       <div className="w-1/3 mx-auto mt-8 bg-white rounded-md divide-y divide-gray-400 divide-dashed">
-
         {/* todoリストの表示 */}
-        {
-          todoList.map((value) => {
-            return (
-              <div key={value.id} className="flex items-center">
-
-                {/* チェックボタン */}
-                <div onClick={() => {
-                  checkTodo(value.id)
+        {todoList.map((value) => {
+          return (
+            <div key={value.id} className="flex items-center">
+              {/* チェックボタン */}
+              <div
+                onClick={() => {
+                  checkTodo(value.id);
                 }}
-                >
-                  <Checkbox color="green" defaultChecked={value.isChecked} className="text-left" />
-                </div>
+              >
+                <Checkbox
+                  id={String(value.id)}
+                  checked={value.isChecked}
+                  color="green"
+                  defaultChecked={false}
+                  className="text-left"
+                />
+              </div>
 
-                {/* 表示されるtodoリストのチェック有無による色分け */}
-                <div className={value.isChecked ? "text-gray-500 line-through" : "text-black-500"}>
-                  {value.text}</div>
-
-                {/* チェックされているものだけ削除ボタンを表示する */}
-                {value.isChecked &&
-                  <div onClick={() => {
-                    deleteTodoList(value.id)
-                  }}
-                    className="ml-auto mr-3" >
-                    <RedButton name={"削除"} />
-                  </div>
+              {/* 表示されるtodoリストのチェック有無による色分け */}
+              <div
+                className={
+                  value.isChecked
+                    ? "text-gray-500 line-through"
+                    : "text-black-500"
                 }
-              </div >
-            )
-          })
-        }
-      </div>
-    </div >
-  )
-}
+              >
+                {value.text}
+              </div>
 
-export default Hello
+              {/* チェックされているものだけ削除ボタンを表示する */}
+              {value.isChecked && (
+                <div
+                  onClick={() => {
+                    deleteTodoList(value.id);
+                  }}
+                  className="ml-auto mr-3"
+                >
+                  <RedButton name={"削除"} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default Hello;
